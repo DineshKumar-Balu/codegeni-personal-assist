@@ -21,15 +21,17 @@ def oauth_callback(
   raw_user_data: Dict[str, str],
   default_user: cl.User,
 ) -> Optional[cl.User]:
-  return default_user
+    user_name = raw_user_data.get('name', 'there')  
+    cl.user_session.set('user_name', user_name) 
+    return default_user
 
 async def speech_to_text(audio_file):
     response = client.audio.translations.create(
-        file=audio_file,  # Required audio file
-        model="whisper-large-v3",  # Required model to use for translation
-        prompt="Specify context or spelling",  # Optional
-        response_format="json",  # Optional
-        temperature=0.0  # Adjust this based on Groq's API
+        file=audio_file, 
+        model="whisper-large-v3",  
+        prompt="Specify context or spelling", 
+        response_format="json", 
+        temperature=0.0  
     )
     return response.text
 
@@ -44,9 +46,7 @@ def text_to_speech(text):
 
     # Open a file to store the output audio
     with open("output_audio.mp3", "wb") as audio_file:
-        # Iterate over the audio chunks from the TTS client
         for chunk in client.tts(text, options):
-            # Write each chunk to the file
             audio_file.write(chunk)
 
 @cl.on_audio_chunk
@@ -62,7 +62,6 @@ async def on_audio_chunk(chunk: cl.AudioChunk):
 @cl.on_audio_end
 async def on_audio_end(elements: list[ElementBased]):
     audio_buffer: BytesIO = cl.user_session.get("audio_buffer")
-    # audio_buffer = cl.user_session.get("audio_buffer")
     audio_buffer.seek(0)
     transcription = await speech_to_text(audio_buffer)
     await cl.Message(content=transcription).send()
@@ -70,10 +69,9 @@ async def on_audio_end(elements: list[ElementBased]):
     genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(transcription)
-    #await cl.Message(content=response.text).send()
     text_to_speech(response.text)
     elements = [
-        cl.Audio(path="output_audio.mp3", display="inline",auto_play = True),
+        cl.Audio(path="output_audio.mp3", display="inline", auto_play=True),
     ]
     await cl.Message(
         content="Question",
@@ -85,5 +83,21 @@ async def stop_message(message: str):
     if message.content == "":
         pass
     else:
-        await cl.Message(content = "Please give input through voice").send()
+        await cl.Message(content="Please give input through voice").send()
+
+# Send personalized greeting after OAuth login
+@cl.on_chat_start
+async def greet_user():
+    user_name = cl.user_session.get('user_name', 'there')
+    greeting = f"Hello {user_name}, I'm your virtual assistant! How can I assist you today?"
+    await cl.Message(content=greeting).send()
+
+@cl.on_message
+async def handle_message(message):
+    if message.content.startswith("oauth:"):
+        user_name = message.content.split(":")[1]  
+        try:
+            cl.user_session.set('user_name', user_name)
+        except cl.ChainlitContextException:
+            print("Chainlit context is not available.")
 
