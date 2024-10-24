@@ -1,8 +1,7 @@
 from io import BytesIO
 from typing import Optional, Dict
-
-import chainlit as cl
 import os
+import chainlit as cl
 import google.generativeai as genai
 from chainlit.element import ElementBased
 from dotenv import load_dotenv
@@ -10,16 +9,18 @@ from groq import Groq
 from pyht import Client
 from pyht.client import TTSOptions
 
+# Load environment variables
 load_dotenv()
 
+# Initialize the Groq client
 client = Groq(api_key="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")
 
 @cl.oauth_callback
 def oauth_callback(
-  provider_id: str,
-  token: str,
-  raw_user_data: Dict[str, str],
-  default_user: cl.User,
+    provider_id: str,
+    token: str,
+    raw_user_data: Dict[str, str],
+    default_user: cl.User,
 ) -> Optional[cl.User]:
     user_name = raw_user_data.get('name', 'there')  
     cl.user_session.set('user_name', user_name) 
@@ -101,3 +102,7 @@ async def handle_message(message):
         except cl.ChainlitContextException:
             print("Chainlit context is not available.")
 
+# Run the Chainlit application
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 3000))  
+    cl.run(app=cl, host="0.0.0.0", port=port)
