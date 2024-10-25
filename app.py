@@ -4,16 +4,13 @@ import os
 import chainlit as cl
 import google.generativeai as genai
 from chainlit.element import ElementBased
+from dotenv import load_dotenv
 from groq import Groq
 from pyht import Client
 from pyht.client import TTSOptions
 
-# Hard-code your OAuth credentials
-CLIENT_ID = "676597742614-c6tres4rbk0tkvnh6g8fnictlbg9ctd3.apps.googleusercontent.com"  
-CLIENT_SECRET = "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"  
-
-# Initialize OAuth with hard-coded credentials
-cl.oauth(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+# Load environment variables
+load_dotenv()
 
 # Initialize the Groq client
 client = Groq(api_key="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")
@@ -109,3 +106,4 @@ async def handle_message(message):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 3000))  
     cl.run(app=cl, host="0.0.0.0", port=port)  
+
