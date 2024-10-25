@@ -4,25 +4,20 @@ import os
 import chainlit as cl
 import google.generativeai as genai
 from chainlit.element import ElementBased
-from dotenv import load_dotenv
 from groq import Groq
 from pyht import Client
 from pyht.client import TTSOptions
 
-# Load environment variables
-load_dotenv()
+# Hard-code your OAuth credentials
+CLIENT_ID = "676597742614-c6tres4rbk0tkvnh6g8fnictlbg9ctd3.apps.googleusercontent.com"  
+CLIENT_SECRET = "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"  
 
-# Check Chainlit version
-print("Chainlit version:", cl.__version__)
-
-# Initialize OAuth
-if hasattr(cl, 'oauth'):
-    cl.oauth(client_id=os.getenv('CLIENT_ID'), client_secret=os.getenv('CLIENT_SECRET'))
+# Initialize OAuth with hard-coded credentials
+cl.oauth(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
 
 # Initialize the Groq client
 client = Groq(api_key="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")
 
-# OAuth Callback
 @cl.oauth_callback
 def oauth_callback(
     provider_id: str,
@@ -83,13 +78,15 @@ async def on_audio_end(elements: list[ElementBased]):
         cl.Audio(path="output_audio.mp3", display="inline", auto_play=True),
     ]
     await cl.Message(
-        content="Response:",
+        content="Question",
         elements=elements,
     ).send()
 
 @cl.on_message
 async def stop_message(message: str):
     if message.content == "":
+        pass
+    else:
         await cl.Message(content="Please give input through voice").send()
 
 # Send personalized greeting after OAuth login
@@ -99,7 +96,16 @@ async def greet_user():
     greeting = f"Hello {user_name}, I'm your virtual assistant! How can I assist you today?"
     await cl.Message(content=greeting).send()
 
+@cl.on_message
+async def handle_message(message):
+    if message.content.startswith("oauth:"):
+        user_name = message.content.split(":")[1]  
+        try:
+            cl.user_session.set('user_name', user_name)
+        except cl.ChainlitContextException:
+            print("Chainlit context is not available.")
+
 # Run the Chainlit application
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 3000))  
-    cl.run(app=cl, host="0.0.0.0", port=port)
+    cl.run(app=cl, host="0.0.0.0", port=port)  
