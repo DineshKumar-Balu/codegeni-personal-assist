@@ -12,8 +12,12 @@ from pyht.client import TTSOptions
 # Load environment variables
 load_dotenv()
 
+# Check Chainlit version
+print("Chainlit version:", cl.__version__)
+
 # Initialize OAuth
-cl.oauth(client_id=os.getenv('CLIENT_ID'), client_secret=os.getenv('CLIENT_SECRET'))
+if hasattr(cl, 'oauth'):
+    cl.oauth(client_id=os.getenv('CLIENT_ID'), client_secret=os.getenv('CLIENT_SECRET'))
 
 # Initialize the Groq client
 client = Groq(api_key="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")
