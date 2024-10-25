@@ -12,9 +12,13 @@ from pyht.client import TTSOptions
 # Load environment variables
 load_dotenv()
 
+# Initialize OAuth
+cl.oauth(client_id=os.getenv('CLIENT_ID'), client_secret=os.getenv('CLIENT_SECRET'))
+
 # Initialize the Groq client
 client = Groq(api_key="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")
 
+# OAuth Callback
 @cl.oauth_callback
 def oauth_callback(
     provider_id: str,
@@ -75,15 +79,13 @@ async def on_audio_end(elements: list[ElementBased]):
         cl.Audio(path="output_audio.mp3", display="inline", auto_play=True),
     ]
     await cl.Message(
-        content="Question",
+        content="Response:",
         elements=elements,
     ).send()
 
 @cl.on_message
 async def stop_message(message: str):
     if message.content == "":
-        pass
-    else:
         await cl.Message(content="Please give input through voice").send()
 
 # Send personalized greeting after OAuth login
@@ -92,15 +94,6 @@ async def greet_user():
     user_name = cl.user_session.get('user_name', 'there')
     greeting = f"Hello {user_name}, I'm your virtual assistant! How can I assist you today?"
     await cl.Message(content=greeting).send()
-
-@cl.on_message
-async def handle_message(message):
-    if message.content.startswith("oauth:"):
-        user_name = message.content.split(":")[1]  
-        try:
-            cl.user_session.set('user_name', user_name)
-        except cl.ChainlitContextException:
-            print("Chainlit context is not available.")
 
 # Run the Chainlit application
 if __name__ == "__main__":
